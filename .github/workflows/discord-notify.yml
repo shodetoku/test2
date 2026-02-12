@@ -1,0 +1,48 @@
+name: Discord GitHub Notifications
+
+on:
+  push:
+    branches:
+      - "**"   # all branches
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send notification to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          ACTOR="${{ github.actor }}"
+          AVATAR_URL="https://github.com/${{ github.actor }}.png"
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          COMMIT_URL="${{ github.event.head_commit.url }}"
+
+          # Fallback for PR events (no head_commit)
+          if [ -z "$COMMIT_MSG" ]; then
+            COMMIT_MSG="${{ github.event.pull_request.title }}"
+            COMMIT_URL="${{ github.event.pull_request.html_url }}"
+          fi
+
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{
+            \"username\": \"GitHub Bot\",
+            \"avatar_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\",
+            \"embeds\": [{
+              \"author\": {
+                \"name\": \"$ACTOR\",
+                \"icon_url\": \"$AVATAR_URL\"
+              },
+              \"title\": \"📦 $REPO\",
+              \"description\": \"**Branch:** \`$BRANCH\`\n**Message:** $COMMIT_MSG\",
+              \"url\": \"$COMMIT_URL\",
+              \"color\": 5814783
+            }]
+          }" \
+          $DISCORD_WEBHOOK
