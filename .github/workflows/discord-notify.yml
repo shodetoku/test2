@@ -1,70 +1,70 @@
-name: Discord GitHub Notifications
+# 📂 .github/workflows/discord.yml
+name: GitHub → Discord Webhook
 
 on:
   push:
     branches: ["**"]
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, closed, reopened, synchronize, merged]
 
 jobs:
-  notify:
+  notifyDiscord:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Discord Notification
-        if: always()
+      - name: Send notification to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          # These are passed as env vars for jq to pick up safely
-          MSG: ${{ github.event.head_commit.message || github.event.pull_request.title }}
-          URL: ${{ github.event.head_commit.url || github.event.pull_request.html_url }}
-          STATUS: ${{ job.status }}
+          GITHUB_EVENT: ${{ github.event_name }}
+          GITHUB_ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
-          BRANCH: ${{ github.ref_name }}
-          AUTHOR: ${{ github.actor }}
-          EVENT: ${{ github.event_name }}
+          SHA: ${{ github.sha }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          # 1. Determine Color and Emoji
-          if [ "$STATUS" = "success" ]; then
-            COLOR=3066993
-            EMOJI="✅"
-          else
+          # Default values
+          COLOR=3447003
+          AUTHOR_URL="https://github.com/$GITHUB_ACTOR"
+          AUTHOR_ICON="https://github.com/$GITHUB_ACTOR.png"
+
+          if [ "$GITHUB_EVENT" = "push" ]; then
+            COLOR=5763719
+            BRANCH=$(jq -r '.ref' $GITHUB_EVENT_PATH | sed 's/refs\/heads\///')
+            COMMIT_URL="https://github.com/$REPO/commit/$SHA"
+            COMMIT_MSG=$(jq -r '.head_commit.message' $GITHUB_EVENT_PATH)
+            TITLE="Push to branch: $BRANCH"
+            DESCRIPTION="**Commit Message:**\`\`\`$COMMIT_MSG\`\`\`[View Commit]($COMMIT_URL)"
+          elif [ "$GITHUB_EVENT" = "pull_request" ]; then
+            PR_TITLE=$(jq -r '.pull_request.title' $GITHUB_EVENT_PATH)
+            NUMBER=$(jq -r '.pull_request.number' $GITHUB_EVENT_PATH)
+            ACTION=$(jq -r '.action' $GITHUB_EVENT_PATH)
+            URL=$(jq -r '.pull_request.html_url' $GITHUB_EVENT_PATH)
             COLOR=15158332
-            EMOJI="❌"
+            TITLE="Pull Request $ACTION"
+            DESCRIPTION="**Title:** $PR_TITLE**PR Number:** #$NUMBER[View Pull Request]($URL)"
+          else
+            TITLE="Repository Event"
+            DESCRIPTION="**$GITHUB_ACTOR** triggered: $GITHUB_EVENT"
           fi
 
-          # 2. Use jq to build the JSON safely (handles quotes/special chars)
-          JSON_PAYLOAD=$(jq -n \
-            --arg user "$AUTHOR" \
-            --arg avatar "https://github.com/$AUTHOR.png" \
-            --arg title "$EMOJI Workflow $STATUS" \
-            --arg url "$URL" \
-            --arg color "$COLOR" \
+          # Build JSON payload for Discord embed
+          JSON=$(jq -n \
+            --arg title "$TITLE" \
+            --arg desc "$DESCRIPTION" \
+            --arg actor "$GITHUB_ACTOR" \
+            --arg actorUrl "$AUTHOR_URL" \
+            --arg actorIcon "$AUTHOR_ICON" \
             --arg repo "$REPO" \
-            --arg branch "$BRANCH" \
-            --arg event "$EVENT" \
-            --arg msg "$MSG" \
-            --arg timestamp "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-            '{
-              username: "GitHub",
-              avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-              embeds: [{
+            --argjson color $COLOR \
+            '{embeds: [{
                 title: $title,
-                url: $url,
-                color: ($color | tonumber),
-                author: {
-                  name: $user,
-                  icon_url: $avatar
-                },
-                fields: [
-                  { name: "Repository", value: ("[" + $repo + "](https://github.com/" + $repo + ")"), inline: true },
-                  { name: "Branch", value: ("`" + $branch + "`"), inline: true },
-                  { name: "Event", value: $event, inline: true },
-                  { name: "Message", value: $msg, inline: false }
-                ],
-                timestamp: $timestamp,
-                footer: { text: "GitHub Actions" }
-              }]
-            }')
+                description: $desc,
+                color: $color,
+                author: {name: $actor, url: $actorUrl, icon_url: $actorIcon},
+                footer: {text: $repo},
+                timestamp: (now | todate)
+            }]}')
 
-          # 3. Send it
-          curl -H "Content-Type: application/json" -X POST -d "$JSON_PAYLOAD" "$DISCORD_WEBHOOK"
+          # Send to Discord webhook
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "$JSON" \
+               $DISCORD_WEBHOOK
