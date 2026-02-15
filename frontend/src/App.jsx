@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -12,6 +13,7 @@ import IntakeForm from './pages/IntakeForm';
 import './styles/App.css';
 
 function App() {
+  const navigate = useNavigate();
   // currentPage para sa navigation
   const [currentPage, setCurrentPage] = useState('home');
 
@@ -26,6 +28,7 @@ function App() {
       setCurrentPage(page);
       setShowIntakeForm(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      navigate('/'); // <-- ADD THIS LINE
     }
   };
 
@@ -61,7 +64,16 @@ function App() {
       <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
 
       <main className="main-content">
-        {renderPage()}
+        
+        <Routes>
+          {/* 1. The specific URL you want to type in the address bar */}
+          <Route path="/pages/changepassword" element={<ChangePassword onNavigate={handleNavigate} />} />
+          
+          {/* 2. THE FIX: The Wildcard Route (*) */}
+          {/* If the URL is anything else, React Router will safely fall back to your existing switch statement! */}
+          <Route path="*" element={renderPage()} />
+        </Routes>
+        
       </main>
 
       <Footer />
