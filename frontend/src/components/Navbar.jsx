@@ -15,15 +15,22 @@ function Navbar({ onNavigate, onAppointmentClick }) {
           <button onClick={() => onNavigate('home')}>
             Home
           </button>
+          <button onClick={() => onNavigate('about')}>
+            About us
+          </button>
           <button onClick={() => onNavigate('services')}>
             Services
           </button>
           <button onClick={() => onNavigate('contact')}>
-            Contact Us
+            Contact
           </button>
         </div>
 
         <div className="nav-actions">
+          <button className="login-btn" onClick={() => onNavigate('login')}>
+            <span className="login-icon">👤</span>
+            Login
+          </button>
           <button
             className="appointment-btn"
             onClick={onAppointmentClick}
