@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppointmentModal from './components/AppointmentModal';
 import Home from './pages/Home';
+import AboutUs from './pages/AboutUs';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
 import IntakeForm from './pages/IntakeForm';
@@ -12,21 +14,82 @@ import './index.css';
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-  const [currentView, setCurrentView] = useState('landing'); // landing, intake, login, forgot-password
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [intakeFormCompleted, setIntakeFormCompleted] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState(''); // 'intake' or 'login'
+  const [activeSection, setActiveSection] = useState('home');
 
-  const scrollToSection = (sectionId) => {
-    if (sectionId === 'login') {
-      setCurrentView('login');
+  // router helpers
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Observe which section is in view
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-50% 0px -50% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    const sections = ['home', 'about', 'services', 'contact'];
+    sections.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => {
+      sections.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) observer.unobserve(element);
+      });
+    };
+  }, [location.pathname]);
+
+  const handleNavigate = (dest) => {
+    if (!dest) return;
+    if (dest === 'book-appointment') {
+      setShowModal(true);
       return;
     }
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+
+    // For main sections, scroll to them on the same page
+    if (['home', 'about', 'services', 'contact'].includes(dest)) {
+      // If not on home page, navigate there first
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => {
+          const el = document.getElementById(dest);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        const el = document.getElementById(dest);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
     }
+
+    // For other pages (login, intake, etc.), use routing
+    const map = {
+      login: '/login',
+      intake: '/intake',
+      'intake-form': '/intake',
+    };
+
+    const path = map[dest] || '/' + dest;
+    navigate(path);
   };
 
   const handleAppointmentClick = () => {
@@ -35,33 +98,33 @@ function App() {
 
   const handleFirstTime = () => {
     setShowModal(false);
-    setCurrentView('intake');
+    navigate('/intake');
   };
 
   const handleReturning = () => {
     setShowModal(false);
-    setCurrentView('login');
+    navigate('/login');
   };
 
   const handleIntakeFormComplete = (isCompleted) => {
     if (isCompleted) {
       // Mark intake form as completed
       setIntakeFormCompleted(true);
-      setCurrentView('landing');
+      navigate('/');
       // Show success notification
       setNotificationType('intake');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 3000);
     } else {
       // User cancelled
-      setCurrentView('landing');
+      navigate('/');
     }
   };
 
   const handleLoginSuccess = () => {
     // Mark user as logged in
     setIsLoggedIn(true);
-    setCurrentView('landing');
+    navigate('/');
     // Show success notification
     setNotificationType('login');
     setShowNotification(true);
@@ -72,72 +135,55 @@ function App() {
     if (page === 'home') {
       handleLoginSuccess();
     } else if (page === 'forgot-password') {
-      setCurrentView('forgot-password');
+      navigate('/forgot-password');
     } else if (page === 'login') {
-      setCurrentView('login');
+      navigate('/login');
     }
   };
 
   const handleBackToHome = () => {
-    setCurrentView('landing');
+    navigate('/');
   };
 
-  // Show IntakeForm
-  if (currentView === 'intake') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onNavigate={handleBackToHome} onAppointmentClick={handleAppointmentClick} />
-        <main className="flex-1">
-          <IntakeForm onClose={handleIntakeFormComplete} />
-        </main>
-        <Footer />
-      </div>
-    );
+  // derive a friendly currentPage for Navbar from location
+  const pathname = location.pathname || '/';
+  let currentPage = 'home';
+  if (pathname === '/') {
+    currentPage = activeSection;
+  } else if (pathname.startsWith('/intake')) {
+    currentPage = 'intake';
+  } else if (pathname.startsWith('/login')) {
+    currentPage = 'login';
+  } else if (pathname.startsWith('/forgot-password')) {
+    currentPage = 'forgot-password';
   }
 
-  // Show Login
-  if (currentView === 'login') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onNavigate={handleBackToHome} onAppointmentClick={handleAppointmentClick} />
-        <main className="flex-1">
-          <Login onNavigate={handleLoginNavigation} />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Show Forgot Password
-  if (currentView === 'forgot-password') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onNavigate={handleBackToHome} onAppointmentClick={handleAppointmentClick} />
-        <main className="flex-1">
-          <ForgotPassword onNavigate={handleLoginNavigation} />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Show Landing Page
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar onNavigate={scrollToSection} onAppointmentClick={handleAppointmentClick} />
+      <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
 
       <main className="flex-1">
-        <section id="home" className="w-full">
-          <Home />
-        </section>
-
-        <section id="services" className="w-full">
-          <Services />
-        </section>
-
-        <section id="contact" className="w-full">
-          <Contact />
-        </section>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <section id="home">
+                <Home />
+              </section>
+              <section id="about">
+                <AboutUs />
+              </section>
+              <section id="services">
+                <Services />
+              </section>
+              <section id="contact">
+                <Contact />
+              </section>
+            </>
+          } />
+          <Route path="/intake" element={<IntakeForm onClose={handleIntakeFormComplete} />} />
+          <Route path="/login" element={<Login onNavigate={handleLoginNavigation} />} />
+          <Route path="/forgot-password" element={<ForgotPassword onNavigate={handleLoginNavigation} />} />
+        </Routes>
       </main>
 
       <Footer />
