@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppointmentModal from './components/AppointmentModal';
@@ -12,20 +13,39 @@ import './index.css';
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-  const [currentView, setCurrentView] = useState('landing'); // landing, intake, login, forgot-password
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [intakeFormCompleted, setIntakeFormCompleted] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState(''); // 'intake' or 'login'
 
-  const scrollToSection = (sectionId) => {
-    if (sectionId === 'login') {
-      setCurrentView('login');
+  // router helpers
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigate = (dest) => {
+    if (!dest) return;
+    if (dest === 'book-appointment') {
+      setShowModal(true);
       return;
     }
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+
+    const map = {
+      home: '/',
+      about: '/about',
+      services: '/services',
+      contact: '/contact',
+      login: '/login',
+      intake: '/intake',
+      'intake-form': '/intake',
+    };
+
+    const path = map[dest] || '/' + dest;
+    navigate(path);
+    if (path === '/') {
+      setTimeout(() => {
+        const el = document.getElementById('home');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 80);
     }
   };
 
@@ -35,33 +55,33 @@ function App() {
 
   const handleFirstTime = () => {
     setShowModal(false);
-    setCurrentView('intake');
+    navigate('/intake');
   };
 
   const handleReturning = () => {
     setShowModal(false);
-    setCurrentView('login');
+    navigate('/login');
   };
 
   const handleIntakeFormComplete = (isCompleted) => {
     if (isCompleted) {
       // Mark intake form as completed
       setIntakeFormCompleted(true);
-      setCurrentView('landing');
+      navigate('/');
       // Show success notification
       setNotificationType('intake');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 3000);
     } else {
       // User cancelled
-      setCurrentView('landing');
+      navigate('/');
     }
   };
 
   const handleLoginSuccess = () => {
     // Mark user as logged in
     setIsLoggedIn(true);
-    setCurrentView('landing');
+    navigate('/');
     // Show success notification
     setNotificationType('login');
     setShowNotification(true);
@@ -72,72 +92,41 @@ function App() {
     if (page === 'home') {
       handleLoginSuccess();
     } else if (page === 'forgot-password') {
-      setCurrentView('forgot-password');
+      navigate('/forgot-password');
     } else if (page === 'login') {
-      setCurrentView('login');
+      navigate('/login');
     }
   };
 
   const handleBackToHome = () => {
-    setCurrentView('landing');
+    navigate('/');
   };
 
-  // Show IntakeForm
-  if (currentView === 'intake') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onNavigate={handleBackToHome} onAppointmentClick={handleAppointmentClick} />
-        <main className="flex-1">
-          <IntakeForm onClose={handleIntakeFormComplete} />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  // derive a friendly currentPage for Navbar from location
+  const pathname = location.pathname || '/';
+  let currentPage = 'home';
+  if (pathname === '/' || pathname === '/home') currentPage = 'home';
+  else if (pathname.startsWith('/about')) currentPage = 'about';
+  else if (pathname.startsWith('/services')) currentPage = 'services';
+  else if (pathname.startsWith('/contact')) currentPage = 'contact';
+  else if (pathname.startsWith('/intake')) currentPage = 'intake';
+  else if (pathname.startsWith('/login')) currentPage = 'login';
+  else if (pathname.startsWith('/forgot-password')) currentPage = 'forgot-password';
 
-  // Show Login
-  if (currentView === 'login') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onNavigate={handleBackToHome} onAppointmentClick={handleAppointmentClick} />
-        <main className="flex-1">
-          <Login onNavigate={handleLoginNavigation} />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Show Forgot Password
-  if (currentView === 'forgot-password') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar onNavigate={handleBackToHome} onAppointmentClick={handleAppointmentClick} />
-        <main className="flex-1">
-          <ForgotPassword onNavigate={handleLoginNavigation} />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Show Landing Page
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar onNavigate={scrollToSection} onAppointmentClick={handleAppointmentClick} />
+      <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
 
       <main className="flex-1">
-        <section id="home" className="w-full">
-          <Home />
-        </section>
-
-        <section id="services" className="w-full">
-          <Services />
-        </section>
-
-        <section id="contact" className="w-full">
-          <Contact />
-        </section>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/intake" element={<IntakeForm onClose={handleIntakeFormComplete} />} />
+          <Route path="/login" element={<Login onNavigate={handleLoginNavigation} />} />
+          <Route path="/forgot-password" element={<ForgotPassword onNavigate={handleLoginNavigation} />} />
+        </Routes>
       </main>
 
       <Footer />
