@@ -5,6 +5,7 @@ import '../styles/IntakeForm.css';
 function IntakeForm({ onClose }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
 
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -119,12 +120,38 @@ function IntakeForm({ onClose }) {
     saveToStorage('intakeFormData', formData);
   };
 
+  const isCurrentStepValid = () => {
+    switch (currentStep) {
+      case 1:
+        return lastName && firstName && dateOfBirth && email && mobileNumber && streetAddress && city && province && zipCode;
+      case 2:
+        return mainReason && duration;
+      case 3:
+        const step3Valid = hospitalized && surgicalProcedures;
+        if (!step3Valid) return false;
+        if (hospitalized === 'Yes' && (!admissionReason || !admissionYear)) return false;
+        if (surgicalProcedures === 'Yes' && (!procedureType || !procedureYear)) return false;
+        return true;
+      case 4:
+        return currentMedications && allergies;
+      case 5:
+        const hasChecked = Object.values(familyHistory).some(val => val === true);
+        return hasChecked || familyHistoryOthers;
+      default:
+        return false;
+    }
+  };
+
   const handleNext = () => {
+    if (!isCurrentStepValid()) return;
     saveFormData();
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
-      setIsSubmitted(true);
+      setShowAlert(true);
+      setTimeout(() => {
+        setIsSubmitted(true);
+      }, 2000);
     }
   };
 
@@ -135,7 +162,7 @@ function IntakeForm({ onClose }) {
   };
 
   const handleReturnHome = () => {
-    onClose();
+    onClose(true);
   };
 
   const steps = [
@@ -655,18 +682,24 @@ function IntakeForm({ onClose }) {
                   ← Previous
                 </button>
               )}
-              {currentStep < 5 ? (
-                <button className="btn-next" onClick={handleNext}>
-                  Next →
-                </button>
-              ) : (
-                <button className="btn-next" onClick={handleNext}>
-                  Submit →
-                </button>
-              )}
+              <button 
+                className="btn-next" 
+                onClick={handleNext}
+                disabled={!isCurrentStepValid()}
+              >
+                {currentStep < 5 ? 'Next →' : 'Submit →'}
+              </button>
             </div>
           </div>
         </div>
+        {showAlert && (
+          <div className="alert-container">
+            <div className="alert-box alert-success">
+              <div className="alert-icon">✓</div>
+              <div className="alert-text">Form submitted successfully!</div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
