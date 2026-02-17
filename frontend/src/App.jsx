@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppointmentModal from './components/AppointmentModal';
 import Home from './pages/Home';
+import AboutUs from './pages/AboutUs';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
 import IntakeForm from './pages/IntakeForm';
@@ -17,10 +18,45 @@ function App() {
   const [intakeFormCompleted, setIntakeFormCompleted] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState(''); // 'intake' or 'login'
+  const [activeSection, setActiveSection] = useState('home');
 
   // router helpers
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Observe which section is in view
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-50% 0px -50% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    const sections = ['home', 'about', 'services', 'contact'];
+    sections.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => {
+      sections.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) observer.unobserve(element);
+      });
+    };
+  }, [location.pathname]);
 
   const handleNavigate = (dest) => {
     if (!dest) return;
@@ -29,11 +65,24 @@ function App() {
       return;
     }
 
+    // For main sections, scroll to them on the same page
+    if (['home', 'about', 'services', 'contact'].includes(dest)) {
+      // If not on home page, navigate there first
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => {
+          const el = document.getElementById(dest);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        const el = document.getElementById(dest);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
+    // For other pages (login, intake, etc.), use routing
     const map = {
-      home: '/',
-      about: '/about',
-      services: '/services',
-      contact: '/contact',
       login: '/login',
       intake: '/intake',
       'intake-form': '/intake',
@@ -41,12 +90,6 @@ function App() {
 
     const path = map[dest] || '/' + dest;
     navigate(path);
-    if (path === '/') {
-      setTimeout(() => {
-        const el = document.getElementById('home');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 80);
-    }
   };
 
   const handleAppointmentClick = () => {
@@ -105,13 +148,15 @@ function App() {
   // derive a friendly currentPage for Navbar from location
   const pathname = location.pathname || '/';
   let currentPage = 'home';
-  if (pathname === '/' || pathname === '/home') currentPage = 'home';
-  else if (pathname.startsWith('/about')) currentPage = 'about';
-  else if (pathname.startsWith('/services')) currentPage = 'services';
-  else if (pathname.startsWith('/contact')) currentPage = 'contact';
-  else if (pathname.startsWith('/intake')) currentPage = 'intake';
-  else if (pathname.startsWith('/login')) currentPage = 'login';
-  else if (pathname.startsWith('/forgot-password')) currentPage = 'forgot-password';
+  if (pathname === '/') {
+    currentPage = activeSection;
+  } else if (pathname.startsWith('/intake')) {
+    currentPage = 'intake';
+  } else if (pathname.startsWith('/login')) {
+    currentPage = 'login';
+  } else if (pathname.startsWith('/forgot-password')) {
+    currentPage = 'forgot-password';
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -119,10 +164,22 @@ function App() {
 
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<Home />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/contact" element={<Contact />} />
+          <Route path="/" element={
+            <>
+              <section id="home">
+                <Home />
+              </section>
+              <section id="about">
+                <AboutUs />
+              </section>
+              <section id="services">
+                <Services />
+              </section>
+              <section id="contact">
+                <Contact />
+              </section>
+            </>
+          } />
           <Route path="/intake" element={<IntakeForm onClose={handleIntakeFormComplete} />} />
           <Route path="/login" element={<Login onNavigate={handleLoginNavigation} />} />
           <Route path="/forgot-password" element={<ForgotPassword onNavigate={handleLoginNavigation} />} />

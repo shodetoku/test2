@@ -43,6 +43,13 @@
 .category-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: #10b981;
+}
+
+.category-icon svg {
+  width: 3rem;
+  height: 3rem;
+  stroke: #10b981;
 }
 
 .service-category h2 {
@@ -237,6 +244,13 @@
 .pharmacy-card-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: #10b981;
+}
+
+.pharmacy-card-icon svg {
+  width: 3rem;
+  height: 3rem;
+  stroke: #10b981;
 }
 
 .pharmacy-card h3 {
@@ -300,6 +314,13 @@
 .dept-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: #10b981;
+}
+
+.dept-icon svg {
+  width: 3rem;
+  height: 3rem;
+  stroke: #10b981;
 }
 
 .department-card h3 {
