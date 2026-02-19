@@ -42,11 +42,11 @@ const connectToDatabase = async () => {
     // Connect to MongoDB
     await mongoose.connect(appConfig.db.uri, options);
 
-    console.log('✅ Connected to MongoDB successfully');
-    console.log(`📊 Database: ${mongoose.connection.name}`);
-    console.log(`🔗 Host: ${mongoose.connection.host}`);
+    console.log('Connected to MongoDB successfully');
+    console.log(`Database: ${mongoose.connection.name}`);
+    console.log(`Host: ${mongoose.connection.host}`);
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
+    console.error('MongoDB connection error:', error.message);
     
     if (appConfig.isDevelopment) {
       console.error('Full error:', error);
@@ -63,7 +63,7 @@ const connectToDatabase = async () => {
 
 // Connection successful
 mongoose.connection.on('connected', () => {
-  console.log('📡 Mongoose connected to MongoDB');
+  console.log('Mongoose connected to MongoDB');
 });
 
 // Connection error
@@ -78,12 +78,12 @@ mongoose.connection.on('disconnected', () => {
 
 // Reconnected
 mongoose.connection.on('reconnected', () => {
-  console.log('🔄 Mongoose reconnected to MongoDB');
+  console.log('Mongoose reconnected to MongoDB');
 });
 
 // Connection lost
 mongoose.connection.on('close', () => {
-  console.log('🔌 Mongoose connection closed');
+  console.log('Mongoose connection closed');
 });
 
 /**
@@ -93,7 +93,7 @@ mongoose.connection.on('close', () => {
 export const disconnectDatabase = async () => {
   try {
     await mongoose.connection.close();
-    console.log('🛑 Database connection closed gracefully');
+    console.log('Database connection closed gracefully');
   } catch (error) {
     console.error('Error closing database connection:', error);
   }
