@@ -27,8 +27,9 @@ import {
   generatePasswordResetToken,
   verifyPasswordResetToken,
   hashPassword,
-} from '../services/authService.js';
+} from '../controllers/auth.controller.js';
 import { authenticateJWT } from '../middleware/auth.middleware.js';
+import { requireRole } from '../middleware/rbac.middleware.js';
 import { validate, commonSchemas } from '../middleware/validation.middleware.js';
 import { asyncHandler, AppError, HttpStatus } from '../middleware/error.middleware..js';
 import { auditLog } from '../middleware/auditLog.middleware.js';
@@ -44,7 +45,7 @@ const registerSchema = Joi.object({
   email: commonSchemas.email,
   password: commonSchemas.password,
   role: Joi.string()
-    .valid('patient', 'frontdesk', 'doctor')
+    .valid('patient', 'frontdesk', 'doctor', 'admin', 'superadmin')
     .default('patient'),
 });
 
@@ -81,10 +82,12 @@ const refreshTokenSchema = Joi.object({
 /**
  * @route   POST /api/auth/register
  * @desc    Register a new user
- * @access  Public
+ * @access  Superadmin only
  */
 router.post(
   '/register',
+  authenticateJWT,
+  requireRole('superadmin'),
   validate(registerSchema),
   auditLog('USER_CREATED', 'User'),
   asyncHandler(async (req, res) => {
