@@ -265,6 +265,92 @@ export const healthcareSchemas = {
 };
 
 /**
+ * Prescription Validation Schemas
+ */
+export const prescriptionSchemas = {
+  // Create prescription
+  create: Joi.object({
+    patientId: commonSchemas.objectId.required(),
+    providerId: commonSchemas.objectId,  // Optional for doctors (auto-filled)
+    medication: Joi.string()
+      .trim()
+      .min(2)
+      .max(200)
+      .required()
+      .messages({
+        'string.min': 'Medication name must be at least 2 characters',
+        'any.required': 'Medication name is required',
+      }),
+    dosage: Joi.string()
+      .trim()
+      .min(1)
+      .max(100)
+      .required()
+      .messages({
+        'any.required': 'Dosage is required',
+      }),
+    frequency: Joi.string()
+      .trim()
+      .min(2)
+      .max(200)
+      .required()
+      .messages({
+        'any.required': 'Frequency is required',
+      }),
+    startDate: Joi.date()
+      .iso()
+      .required()
+      .messages({
+        'any.required': 'Start date is required',
+      }),
+    endDate: Joi.date()
+      .iso()
+      .greater(Joi.ref('startDate'))
+      .required()
+      .messages({
+        'date.greater': 'End date must be after start date',
+        'any.required': 'End date is required',
+      }),
+    instructions: Joi.string()
+      .trim()
+      .max(500)
+      .allow(''),
+    refillsAllowed: Joi.number()
+      .integer()
+      .min(0)
+      .max(12)
+      .default(0),
+  }),
+
+  // Update status
+  updateStatus: Joi.object({
+    status: Joi.string()
+      .valid('active', 'completed', 'cancelled')
+      .required()
+      .messages({
+        'any.only': 'Status must be active, completed, or cancelled',
+        'any.required': 'Status is required',
+      }),
+  }),
+
+  // Query parameters for listing
+  patientQuery: Joi.object({
+    status: Joi.string().valid('active', 'completed', 'cancelled'),
+    active: Joi.string().valid('true', 'false'),
+  }),
+
+  providerQuery: Joi.object({
+    status: Joi.string().valid('active', 'completed', 'cancelled'),
+    page: commonSchemas.pagination.page,
+    limit: commonSchemas.pagination.limit,
+  }),
+
+  expiringQuery: Joi.object({
+    days: Joi.number().integer().min(1).max(90).default(7),
+  }),
+};
+
+/**
  * Export validation middleware
  */
 export default validate;

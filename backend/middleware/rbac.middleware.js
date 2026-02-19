@@ -4,6 +4,7 @@
  * Implements authorization based on user roles.
  * 
  * Supported Roles (in order of privilege):
+ * - superadmin: Highest level access, can create accounts
  * - admin: Full system access
  * - doctor: Medical staff with patient access
  * - frontdesk: Administrative staff
@@ -30,6 +31,7 @@ const ROLE_HIERARCHY = {
   frontdesk: 2,
   doctor: 3,
   admin: 4,
+  superadmin: 5,
 };
 
 /**

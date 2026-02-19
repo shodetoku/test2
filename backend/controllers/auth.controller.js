@@ -145,6 +145,12 @@ export const generateRefreshToken = (payload) => {
  * console.log(decoded.id, decoded.email, decoded.role);
  */
 export const verifyToken = (token, type = 'access') => {
+    const JWT_ERROR_MESSAGES = {
+      'TokenExpiredError': 'Token has expired',
+      'JsonWebTokenError': 'Invalid token',
+      'NotBeforeError': 'Token not yet valid'
+    };
+
   try {
     const secret =
       type === 'refresh' ? appConfig.jwt.refreshSecret : appConfig.jwt.secret;
@@ -154,22 +160,15 @@ export const verifyToken = (token, type = 'access') => {
       audience: 'parms-frontend',
     });
 
-    // Verify token type matches
     if (decoded.type !== type) {
       throw new Error('Invalid token type');
     }
 
     return decoded;
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      throw new Error('Token has expired');
-    } else if (error.name === 'JsonWebTokenError') {
-      throw new Error('Invalid token');
-    } else if (error.name === 'NotBeforeError') {
-      throw new Error('Token not yet valid');
-    } else {
-      throw new Error('Token verification failed: ' + error.message);
-    }
+    const message = JWT_ERROR_MESSAGES[error.name] 
+    || `Token verification failed: ${error.message}`;
+    throw new Error(message);
   }
 };
 
@@ -222,13 +221,8 @@ export const generateTokenPair = (user) => {
  * sendEmail(user.email, `Reset link: /reset-password?token=${token}`);
  */
 export const generatePasswordResetToken = () => {
-  // Generate random token
   const token = crypto.randomBytes(32).toString('hex');
-
-  // Hash token for storage
   const hash = crypto.createHash('sha256').update(token).digest('hex');
-
-  // Token expires in 1 hour
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
   return {
@@ -263,7 +257,6 @@ export const verifyPasswordResetToken = (token, hashedToken) => {
 export const generateEmailVerificationToken = () => {
   const token = crypto.randomBytes(32).toString('hex');
   const hash = crypto.createHash('sha256').update(token).digest('hex');
-  // Token expires in 24 hours
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   return {

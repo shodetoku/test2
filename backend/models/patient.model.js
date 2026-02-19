@@ -317,11 +317,8 @@ const patientSchema = new mongoose.Schema(
 /**
  * Indexes for Performance
  */
-patientSchema.index({ userId: 1 });
-patientSchema.index({ mrn: 1 });
 patientSchema.index({ lastName: 1, firstName: 1 });
 patientSchema.index({ dateOfBirth: 1 });
-patientSchema.index({ status: 1 });
 
 /**
  * Virtual Properties

@@ -359,8 +359,6 @@ const doctorSchema = new mongoose.Schema(
 /**
  * Indexes for Performance
  */
-doctorSchema.index({ userId: 1 });
-doctorSchema.index({ licenseNumber: 1 });
 doctorSchema.index({ specialty: 1, status: 1 });
 doctorSchema.index({ lastName: 1, firstName: 1 });
 doctorSchema.index({ acceptingNewPatients: 1, status: 1 });

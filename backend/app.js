@@ -112,6 +112,8 @@ app.get('/health', (req, res) => {
 
 // Import route modules
 import authRoutes from './routes/auth.route.js';
+import prescriptionRoutes from './routes/prescription.route.js';
+import userRoutes from './routes/user.route.js';
 
 // Root API endpoint
 app.get('/api', (req, res) => {
@@ -121,6 +123,7 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',
+      prescriptions: '/api/prescriptions',
       users: '/api/users',
       patients: '/api/patients',
       doctors: '/api/doctors',
@@ -131,14 +134,16 @@ app.get('/api', (req, res) => {
 
 // Auth routes (with audit logging)
 app.use('/api/auth', auditLog(), authRoutes);
+// Prescription routes
+app.use('/api/prescriptions', auditLog(), prescriptionRoutes);
+// User routes
+app.use('/api/users', auditLog(), userRoutes);
 
 // TODO: Add more route modules here
-// import userRoutes from './routes/users.js';
 // import patientRoutes from './routes/patients.js';
 // import doctorRoutes from './routes/doctors.js';
 // import appointmentRoutes from './routes/appointments.js';
 // 
-// app.use('/api/users', authenticateJWT, auditLog(), userRoutes);
 // app.use('/api/patients', authenticateJWT, auditLog(), patientRoutes);
 // app.use('/api/doctors', authenticateJWT, auditLog(), doctorRoutes);
 // app.use('/api/appointments', authenticateJWT, auditLog(), appointmentRoutes);
@@ -215,20 +220,20 @@ const startServer = async () => {
     const portAvailable = await isPortAvailable(preferredPort);
     
     if (!portAvailable) {
-      console.log(`⚠️  Port ${preferredPort} is already in use. Finding alternative...`);
+      console.log(`Port ${preferredPort} is already in use. Finding alternative...`);
       actualPort = await findAvailablePort(preferredPort);
-      console.log(`✅ Found available port: ${actualPort}`);
+      console.log(`Found available port: ${actualPort}`);
     }
     
     // Start Express server on available port
     app.listen(actualPort, () => {
       console.log('=================================');
-      console.log(`🚀 PARMS Backend Server Started`);
-      console.log(`📍 Environment: ${appConfig.env}`);
-      console.log(`🌐 Port: ${actualPort}${actualPort !== preferredPort ? ` (configured: ${preferredPort})` : ''}`);
-      console.log(`🗄️  Database: Connected`);
-      console.log(`🔒 Security: Enabled`);
-      console.log(`📝 Logging: ${appConfig.isDevelopment ? 'Development' : 'Production'} mode`);
+      console.log(`PARMS Backend Server Started`);
+      console.log(`Environment: ${appConfig.env}`);
+      console.log(`Port: ${actualPort}${actualPort !== preferredPort ? ` (configured: ${preferredPort})` : ''}`);
+      console.log(`Database: Connected`);
+      console.log(`Security: Enabled`);
+      console.log(`Logging: ${appConfig.isDevelopment ? 'Development' : 'Production'} mode`);
       console.log('=================================');
     });
   } catch (error) {
