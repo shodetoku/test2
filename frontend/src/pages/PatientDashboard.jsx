@@ -1,14 +1,27 @@
 import { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faMap,
+  faCreditCard,
+  faClock,
+  faFileAlt,
+  faCircleCheck,
+  faFileLines
+} from '@fortawesome/free-regular-svg-icons';
+import {
+  faShieldHalved,
+  faFlask,
+  faCircleInfo
+} from '@fortawesome/free-solid-svg-icons';
 import { getCurrentUser } from '../utils/auth';
 import { getFromStorage } from '../utils/storage';
-import { mockAppointments, mockLabResults, mockHealthAlerts } from '../utils/mockData';
+import { mockAppointments } from '../utils/mockData';
+import Sidebar from '../components/Sidebar';
 import '../styles/PatientDashboard.css';
 
 function PatientDashboard({ onNavigate }) {
   const [user, setUser] = useState(null);
   const [nextAppointment, setNextAppointment] = useState(null);
-  const [recentLabResults, setRecentLabResults] = useState([]);
-  const [healthAlerts, setHealthAlerts] = useState([]);
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -19,20 +32,41 @@ function PatientDashboard({ onNavigate }) {
       .filter(apt => apt.status === 'confirmed' && new Date(apt.date) >= new Date())
       .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
     setNextAppointment(upcoming);
-
-    setRecentLabResults(mockLabResults.slice(0, 2));
-    setHealthAlerts(mockHealthAlerts);
   }, []);
+
+  const labResults = [
+    { id: 1, name: 'HbA1c (Glycated Hemoglobin)', date: 'Aug 05, 2024', status: 'Borderline' },
+    { id: 2, name: 'Total Cholesterol', date: 'Jul 28, 2024', status: 'Normal' },
+    { id: 3, name: 'White Blood Cell Count', date: 'Jul 15, 2024', status: 'Normal' }
+  ];
+
+  const billingItems = [
+    { id: 1, name: 'General Checkup', date: 'Aug 03, 2024', amount: 'Php 500', status: 'unpaid' },
+    { id: 2, name: 'Blood Lab Panel', date: 'Jul 28, 2024', amount: 'Paid', status: 'paid' }
+  ];
+
+  const medications = [
+    { id: 1, name: 'Lisinopril 10mg', dosage: '1 tablet once daily in the morning', nextRefill: 'Aug 28, 2024' },
+    { id: 2, name: 'Metformin 500mg', dosage: '1 tablet twice daily with food', nextRefill: 'Sep 12, 2024' }
+  ];
+
+  const medicalHistory = [
+    { id: 1, condition: 'Hypertension', description: 'Diagnosed in 2018. Managed with medication and lifestyle changes.' },
+    { id: 2, condition: 'Left Wrist Fracture', description: 'Occurred in June 2021. Fully recovered after 8 weeks in cast.' }
+  ];
 
   if (!user) {
     return (
-      <div className="patient-dashboard">
-        <div className="dashboard-container">
-          <div className="not-logged-in">
-            <h2>Please log in to view your dashboard</h2>
-            <button className="btn-login-redirect" onClick={() => onNavigate('login')}>
-              Go to Login
-            </button>
+      <div className="dashboard-wrapper">
+        <Sidebar />
+        <div className="patient-dashboard">
+          <div className="dashboard-container">
+            <div className="not-logged-in">
+              <h2>Please log in to view your dashboard</h2>
+              <button className="btn-login-redirect" onClick={() => onNavigate('login')}>
+                Go to Login
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -40,126 +74,198 @@ function PatientDashboard({ onNavigate }) {
   }
 
   return (
-    <div className="patient-dashboard">
-      <div className="dashboard-container">
-        <div className="dashboard-header">
-          <div>
-            <h1>Welcome back, {user.firstName}!</h1>
-            <p className="dashboard-subtitle">Here's your health overview</p>
+    <div className="dashboard-wrapper">
+      <Sidebar />
+      <div className="patient-dashboard">
+        <div className="dashboard-container">
+        <div className="profile-header">
+          <div className="profile-info">
+            <div className="profile-avatar">
+              <div className="avatar-circle">
+                <span>{user.firstName?.[0]}{user.lastName?.[0]}</span>
+              </div>
+              <div className="online-indicator"></div>
+            </div>
+            <div className="profile-details">
+              <h1>{user.firstName} {user.lastName}</h1>
+              <p className="patient-id">Patient ID: #PAVC500021</p>
+            </div>
           </div>
           <button className="btn-new-appointment" onClick={() => onNavigate('book-appointment')}>
-            Book New Appointment
+            + New Appointment
           </button>
         </div>
 
+        <div className="patient-info-grid">
+          <div className="info-item">
+            <span className="info-label">AGE</span>
+            <span className="info-value">34 Years</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">GENDER</span>
+            <span className="info-value">{user.gender || 'Male'}</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">DOB</span>
+            <span className="info-value">{user.dateOfBirth || 'Feb 24, 1990'}</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">HEIGHT / WEIGHT</span>
+            <span className="info-value">182cm / 78kg</span>
+          </div>
+        </div>
+
+        <div className="address-info">
+          <FontAwesomeIcon icon={faMap} />
+          <span>{user.address || '123 Tandang Sora, Quezon City, Philippines, 1121'}</span>
+        </div>
+
         <div className="dashboard-grid">
-          <div className="dashboard-card next-appointment-card">
-            <div className="card-header">
-              <h3>Next Appointment</h3>
-              <span className="card-icon">📅</span>
+          <div className="dashboard-section lab-results-section">
+            <div className="section-header">
+              <div className="section-title">
+                <FontAwesomeIcon icon={faFlask} className="icon-green" />
+                <h3>Laboratory Results</h3>
+              </div>
+              <button className="view-all-link" onClick={() => onNavigate('medical-records')}>View All</button>
             </div>
-            {nextAppointment ? (
-              <div className="appointment-details">
-                <div className="appointment-info">
-                  <div className="info-row">
-                    <span className="label">Department:</span>
-                    <span className="value">{nextAppointment.department}</span>
+            <div className="lab-results-table">
+              <div className="table-header">
+                <span>Test Name</span>
+                <span>Date Performed</span>
+                <span>Status</span>
+              </div>
+              {labResults.map((result) => (
+                <div key={result.id} className="table-row">
+                  <span className="test-name">{result.name}</span>
+                  <span className="test-date">{result.date}</span>
+                  <span className={`status-badge ${result.status.toLowerCase()}`}>{result.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <div className="dashboard-section billing-section">
+              <div className="section-header">
+                <div className="section-title">
+                  <FontAwesomeIcon icon={faCreditCard} className="icon-green" />
+                  <h3>Billing</h3>
+                </div>
+                <button className="more-btn">•••</button>
+              </div>
+              <div className="billing-items">
+                {billingItems.map((item) => (
+                  <div key={item.id} className="billing-item">
+                    <div className="billing-icon">
+                      <FontAwesomeIcon icon={faCreditCard} className="icon-green" />
+                    </div>
+                    <div className="billing-details">
+                      <h4>{item.name}</h4>
+                      <p>{item.date}</p>
+                    </div>
+                    <span className={`billing-amount ${item.status}`}>{item.amount}</span>
                   </div>
-                  <div className="info-row">
-                    <span className="label">Doctor:</span>
-                    <span className="value">{nextAppointment.doctor}</span>
+                ))}
+              </div>
+              <button className="view-balances-btn" onClick={() => onNavigate('billing')}>View Pending Balances</button>
+            </div>
+
+            <div className="dashboard-section insurance-section">
+              <div className="section-header">
+                <div className="section-title">
+                  <FontAwesomeIcon icon={faShieldHalved} className="icon-white" />
+                  <h3>Insurance Status</h3>
+                </div>
+              </div>
+              <div className="insurance-details">
+                <p className="insurance-label">Provider</p>
+                <h4 className="insurance-provider">BlueCross Shield Premier</h4>
+                <div className="deductible-info">
+                  <div className="deductible-header">
+                    <span>Deductible</span>
+                    <span className="deductible-amount">$1,450 / $2,000</span>
                   </div>
-                  <div className="info-row">
-                    <span className="label">Date:</span>
-                    <span className="value">{new Date(nextAppointment.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="label">Time:</span>
-                    <span className="value">{nextAppointment.time}</span>
+                  <div className="deductible-bar">
+                    <div className="deductible-progress" style={{ width: '72.5%' }}></div>
                   </div>
                 </div>
-                <button className="btn-view-details" onClick={() => onNavigate('appointments')}>
-                  View All Appointments
-                </button>
               </div>
-            ) : (
-              <div className="no-data">
-                <p>No upcoming appointments</p>
-                <button className="btn-secondary" onClick={() => onNavigate('book-appointment')}>
-                  Book Appointment
-                </button>
+            </div>
+
+            {nextAppointment && (
+              <div className="dashboard-section next-appointment-section">
+                <div className="section-header">
+                  <h4 className="appointment-label">NEXT APPOINTMENT</h4>
+                </div>
+                <div className="appointment-date-badge">
+                  <span className="appointment-month">AUG</span>
+                  <span className="appointment-day">18</span>
+                </div>
+                <div className="appointment-details">
+                  <h4 className="doctor-name">{nextAppointment.doctor}</h4>
+                  <p className="doctor-specialty">{nextAppointment.department}</p>
+                  <div className="appointment-time">
+                    <FontAwesomeIcon icon={faClock} className="icon-green" />
+                    <span>{nextAppointment.time} (CST)</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
+        </div>
 
-          <div className="dashboard-card lab-results-card">
-            <div className="card-header">
-              <h3>Recent Lab Results</h3>
-              <span className="card-icon">🔬</span>
+        <div className="dashboard-grid-2">
+          <div className="dashboard-section medications-section">
+            <div className="section-header">
+              <div className="section-title">
+                <FontAwesomeIcon icon={faFileLines} className="icon-green" />
+                <h3>Medications</h3>
+              </div>
+              <button className="view-all-link" onClick={() => onNavigate('prescriptions')}>View All</button>
             </div>
-            <div className="lab-results-list">
-              {recentLabResults.map((result) => (
-                <div key={result.id} className="lab-result-item">
-                  <div className="lab-info">
-                    <h4>{result.testName}</h4>
-                    <p className="lab-date">{new Date(result.date).toLocaleDateString()}</p>
+            <div className="medications-list">
+              {medications.map((med) => (
+                <div key={med.id} className="medication-item">
+                  <div className="medication-icon">
+                    <FontAwesomeIcon icon={faFileLines} className="icon-green" />
                   </div>
-                  <span className={`lab-status ${result.normalRange ? 'normal' : 'abnormal'}`}>
-                    {result.normalRange ? 'Normal' : 'Review'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <button className="btn-view-all" onClick={() => onNavigate('medical-records')}>
-              View All Records
-            </button>
-          </div>
-
-          <div className="dashboard-card alerts-card">
-            <div className="card-header">
-              <h3>Health Alerts & Reminders</h3>
-              <span className="card-icon">🔔</span>
-            </div>
-            <div className="alerts-list">
-              {healthAlerts.map((alert) => (
-                <div key={alert.id} className={`alert-item priority-${alert.priority}`}>
-                  <div className="alert-icon">
-                    {alert.type === 'reminder' ? '⏰' : '⚠️'}
-                  </div>
-                  <div className="alert-content">
-                    <h4>{alert.title}</h4>
-                    <p>{alert.message}</p>
+                  <div className="medication-details">
+                    <h4>{med.name}</h4>
+                    <p className="dosage">{med.dosage}</p>
+                    <p className="refill-date">Next Refill: {med.nextRefill}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="dashboard-card quick-actions-card">
-            <div className="card-header">
-              <h3>Quick Actions</h3>
-              <span className="card-icon">⚡</span>
+          <div className="dashboard-section medical-history-section">
+            <div className="section-header">
+              <div className="section-title">
+                <FontAwesomeIcon icon={faFileAlt} className="icon-green" />
+                <h3>Medical History</h3>
+              </div>
+              <button className="info-btn">
+                <FontAwesomeIcon icon={faCircleInfo} />
+              </button>
             </div>
-            <div className="quick-actions-grid">
-              <button className="quick-action-btn" onClick={() => onNavigate('prescriptions')}>
-                <span className="action-icon">💊</span>
-                <span>Prescriptions</span>
-              </button>
-              <button className="quick-action-btn" onClick={() => onNavigate('billing')}>
-                <span className="action-icon">💳</span>
-                <span>Billing</span>
-              </button>
-              <button className="quick-action-btn" onClick={() => onNavigate('profile-settings')}>
-                <span className="action-icon">⚙️</span>
-                <span>Settings</span>
-              </button>
-              <button className="quick-action-btn" onClick={() => onNavigate('medical-records')}>
-                <span className="action-icon">📋</span>
-                <span>Records</span>
-              </button>
+            <div className="medical-history-list">
+              {medicalHistory.map((item) => (
+                <div key={item.id} className="history-item">
+                  <div className="history-icon">
+                    <FontAwesomeIcon icon={faCircleCheck} className="icon-green" />
+                  </div>
+                  <div className="history-details">
+                    <h4>{item.condition}</h4>
+                    <p>{item.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getCurrentUser } from '../utils/auth';
 import { getFromStorage } from '../utils/storage';
 import { mockAppointments } from '../utils/mockData';
+import Sidebar from '../components/Sidebar';
 import '../styles/Appointments.css';
 
 function Appointments({ onNavigate }) {
@@ -16,16 +17,19 @@ function Appointments({ onNavigate }) {
 
   if (!user) {
     return (
-      <div className="appointments">
-        <div className="appointments-container">
-          <div className="not-logged-in">
-            <h2>Please log in to view your appointments</h2>
-            <button className="btn-login-redirect" onClick={() => onNavigate('login')}>
-              Go to Login
-            </button>
+      <>
+        <Sidebar />
+        <div className="appointments">
+          <div className="appointments-container">
+            <div className="not-logged-in">
+              <h2>Please log in to view your appointments</h2>
+              <button className="btn-login-redirect" onClick={() => onNavigate('login')}>
+                Go to Login
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -38,7 +42,9 @@ function Appointments({ onNavigate }) {
   });
 
   return (
-    <div className="appointments">
+    <>
+      <Sidebar />
+      <div className="appointments">
       <div className="appointments-container">
         <div className="appointments-header">
           <div>
@@ -152,6 +158,7 @@ function Appointments({ onNavigate }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
