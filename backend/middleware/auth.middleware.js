@@ -17,7 +17,7 @@
  * @module middleware/auth
  */
 
-import { verifyToken } from '../services/authService.js';
+import { verifyToken } from '../controllers/auth.controller.js';
 import User from '../models/user.model.js';
 import { AppError, HttpStatus } from './error.middleware..js';
 import { asyncHandler } from './error.middleware..js';
