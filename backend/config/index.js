@@ -32,13 +32,16 @@ const configSchema = Joi.object({
     .default(3000)
     .description('Server port number'),
 
-  // Database Configuration
-  MONGODB_URI: Joi.string()
+  // Database Configuration - Multi-Database Support
+  PARMS_DB_URI: Joi.string()
     .required()
-    .description('MongoDB connection string'),
-  DB_URI: Joi.string()
-    .optional()
-    .description('Alias for MONGODB_URI (legacy support)'),
+    .description('MongoDB connection string for PARMS database (full access)'),
+  IBMS_DB_URI: Joi.string()
+    .required()
+    .description('MongoDB connection string for IBMS database (read-only)'),
+  HRMS_DB_URI: Joi.string()
+    .required()
+    .description('MongoDB connection string for HRMS database (read-only)'),
 
   // JWT Configuration
   JWT_SECRET: Joi.string()
@@ -101,9 +104,11 @@ const appConfig = {
   isDevelopment: envVars.NODE_ENV === 'development',
   isTest: envVars.NODE_ENV === 'test',
 
-  // Database
+  // Database - Multi-Database Configuration
   db: {
-    uri: envVars.MONGODB_URI || envVars.DB_URI,
+    parms: envVars.PARMS_DB_URI,
+    ibms: envVars.IBMS_DB_URI,
+    hrms: envVars.HRMS_DB_URI,
     options: {
       // Mongoose connection options
       maxPoolSize: 10,
@@ -148,7 +153,11 @@ if (!appConfig.isProduction) {
   console.log('📋 Configuration loaded:', {
     env: appConfig.env,
     port: appConfig.port,
-    dbUri: appConfig.db.uri.replace(/\/\/.*:.*@/, '//***:***@'), // Hide credentials
+    databases: {
+      parms: appConfig.db.parms.replace(/\/\/.*:.*@/, '//***:***@'), // Hide credentials
+      ibms: appConfig.db.ibms.replace(/\/\/.*:.*@/, '//***:***@'),
+      hrms: appConfig.db.hrms.replace(/\/\/.*:.*@/, '//***:***@'),
+    },
     jwtConfigured: !!appConfig.jwt.secret,
     corsOrigin: appConfig.cors.origin,
   });
