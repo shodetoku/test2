@@ -15,7 +15,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import net from 'net';
 import appConfig from './config/index.js';
-import connectToDatabase from './database/mongodb.js';
+import { connectAllDatabases } from './database/mongodb.js';
 import errorHandler, { notFoundHandler } from './middleware/error.middleware..js';
 import { auditLog } from './middleware/auditLog.middleware.js';
 
@@ -210,8 +210,8 @@ const findAvailablePort = async (startPort, maxAttempts = 10) => {
  */
 const startServer = async () => {
   try {
-    // Connect to MongoDB
-    await connectToDatabase();
+    // Connect to MongoDB (All Systems: PARMS, IBMS, HRMS)
+    await connectAllDatabases();
     
     // Check if configured port is available
     const preferredPort = appConfig.port;
