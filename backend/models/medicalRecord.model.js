@@ -12,6 +12,9 @@
  * @module models/MedicalRecord
  */
 
+import mongoose from 'mongoose';
+import { connectToDatabasePARMS } from '../database/mongodb.js';
+
 const labResultSchema = new mongoose.Schema(
   {
     testName: {
@@ -143,6 +146,19 @@ medicalRecordSchema.virtual('formattedVisitDate').get(function () {
   return this.visitDate.toLocaleDateString('en-US');
 });
 
-const MedicalRecord = mongoose.model('MedicalRecord', medicalRecordSchema);
+/**
+ * Create and export MedicalRecord model
+ * Uses PARMS database connection
+ */
+let MedicalRecord;
 
+export async function getMedicalRecordModel() {
+  if (!MedicalRecord) {
+    const connection = await connectToDatabasePARMS();
+    MedicalRecord = connection.model('MedicalRecord', medicalRecordSchema);
+  }
+  return MedicalRecord;
+}
+
+// Export initialized model (will be undefined until database connects)
 export default MedicalRecord;

@@ -14,6 +14,7 @@
  */
 
 import mongoose from 'mongoose';
+import { connectToDatabasePARMS } from '../database/mongodb.js';
 
 /**
  * Address Subdocument Schema
@@ -427,7 +428,17 @@ patientSchema.set('toJSON', {
 
 /**
  * Create and export Patient model
+ * Uses PARMS database connection
  */
-const Patient = mongoose.model('Patient', patientSchema);
+let Patient;
 
+export async function getPatientModel() {
+  if (!Patient) {
+    const connection = await connectToDatabasePARMS();
+    Patient = connection.model('Patient', patientSchema);
+  }
+  return Patient;
+}
+
+// Export initialized model (will be undefined until database connects)
 export default Patient;

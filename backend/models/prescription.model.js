@@ -13,6 +13,7 @@
  */
 
 import mongoose from 'mongoose';
+import { connectToDatabasePARMS } from '../database/mongodb.js';
 
 const prescriptionSchema = new mongoose.Schema(
   {
@@ -220,6 +221,19 @@ prescriptionSchema.virtual('isExpired').get(function() {
   return this.endDate < new Date();
 });
 
-const Prescription = mongoose.model('Prescription', prescriptionSchema);
+/**
+ * Create and export Prescription model
+ * Uses PARMS database connection
+ */
+let Prescription;
 
+export async function getPrescriptionModel() {
+  if (!Prescription) {
+    const connection = await connectToDatabasePARMS();
+    Prescription = connection.model('Prescription', prescriptionSchema);
+  }
+  return Prescription;
+}
+
+// Export initialized model (will be undefined until database connects)
 export default Prescription;
