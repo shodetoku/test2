@@ -2,6 +2,7 @@
   min-height: 80vh;
   background-color: #f9fafb;
   padding: 2rem;
+  margin-left: 65px;
 }
 
 .appointments-container {
@@ -370,6 +371,8 @@
 @media (max-width: 768px) {
   .appointments {
     padding: 1rem;
+    margin-left: 0;
+    margin-bottom: 60px;
   }
 
   .appointments-header {

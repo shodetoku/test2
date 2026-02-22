@@ -142,6 +142,45 @@ export const mockPrescriptions = [
   }
 ];
 
+export const mockBillingTransactions = [
+  {
+    id: '1',
+    serviceDate: '2024-10-14',
+    description: 'General Consultation',
+    category: 'Outpatient Visit',
+    provider: 'Dr. Grace Burgess',
+    amount: 150.00,
+    paymentStatus: 'paid'
+  },
+  {
+    id: '2',
+    serviceDate: '2024-10-10',
+    description: 'Lab Panel - Blood Work',
+    category: 'Diagnostic Services',
+    provider: 'Central Diagnostics',
+    amount: 85.00,
+    paymentStatus: 'pending'
+  },
+  {
+    id: '3',
+    serviceDate: '2024-09-28',
+    description: 'Pharmacy - Lisinopril',
+    category: 'Prescription Refill',
+    provider: 'Main St. Pharmacy',
+    amount: 12.50,
+    paymentStatus: 'paid'
+  },
+  {
+    id: '4',
+    serviceDate: '2024-09-15',
+    description: 'Specialist Consultation',
+    category: 'Cardiology Dept.',
+    provider: 'Dr. Arthur Shelby',
+    amount: 325.00,
+    paymentStatus: 'paid'
+  }
+];
+
 export const mockInvoices = [
   {
     id: '1',
@@ -169,6 +208,41 @@ export const mockInvoices = [
     amount: 1200,
     status: 'unpaid',
     dueDate: '2026-02-15'
+  }
+];
+
+export const mockLabReports = [
+  {
+    id: '1',
+    testName: 'Complete Blood Count (CBC)',
+    category: 'Hematology Division',
+    serviceProvider: 'Quest Diagnostics',
+    datePerformed: '2023-10-24',
+    status: 'normal'
+  },
+  {
+    id: '2',
+    testName: 'Urinalysis, Routine',
+    category: 'Clinical Pathology',
+    serviceProvider: 'City Health Lab',
+    datePerformed: '2023-10-20',
+    status: 'normal'
+  },
+  {
+    id: '3',
+    testName: 'Lipid Panel with LDL/HDL Ratio',
+    category: 'Cardiovascular Screen',
+    serviceProvider: 'Quest Diagnostics',
+    datePerformed: '2023-10-12',
+    status: 'flagged'
+  },
+  {
+    id: '4',
+    testName: 'Comprehensive Metabolic Panel',
+    category: 'General Screening',
+    serviceProvider: 'Northside Hospital',
+    datePerformed: '2023-09-28',
+    status: 'normal'
   }
 ];
 
