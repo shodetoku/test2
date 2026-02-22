@@ -1,108 +1,171 @@
-/**
- * MongoDB Database Connection
- * 
- * Handles database connection with Mongoose, including:
- * - Connection pooling
- * - Error handling and retry logic
- * - Connection event logging
- * - Graceful disconnection
- * 
- * @module database/mongodb
- */
+import mongoose from "mongoose";
+import { 
+  PARMS_DB_URI,
+  IBMS_DB_URI,
+  HRMS_DB_URI,
+  NODE_ENV 
+} from "../config/env.js";
 
-import mongoose from 'mongoose';
-import appConfig from '../config/index.js';
-
-/**
- * MongoDB Connection Options
- * Optimized for production use with connection pooling
- */
-const options = {
-  ...appConfig.db.options,
-  autoIndex: !appConfig.isProduction, // Disable auto-indexing in production for performance
+// Connection options for better reliability
+const connectionOptions = {
+  serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of 30s
+  socketTimeoutMS: 45000,
+  maxPoolSize: 10,
+  minPoolSize: 2,
 };
 
+let parmsConnection = null;
+let ibmsConnection = null;
+let hrmsConnection = null;
+
 /**
- * Connect to MongoDB Database
- * 
- * @returns {Promise<void>}
+ * Connect to PARMS Database (Full Read/Write Access)
+ * Patient Appointment and Record Management System
+ * This is your own database where you can create, read, update, and delete records
  */
-const connectToDatabase = async () => {
-  try {
-    // Validate database URI
-    if (!appConfig.db.uri) {
-      throw new Error(
-        'MONGODB_URI is not defined. Please check your environment configuration.'
-      );
-    }
-
-    // Set mongoose options
-    mongoose.set('strictQuery', true);
-
-    // Connect to MongoDB
-    await mongoose.connect(appConfig.db.uri, options);
-
-    console.log('Connected to MongoDB successfully');
-    console.log(`Database: ${mongoose.connection.name}`);
-    console.log(`Host: ${mongoose.connection.host}`);
-  } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    
-    if (appConfig.isDevelopment) {
-      console.error('Full error:', error);
-    }
-    
-    // Exit process with failure
-    process.exit(1);
+export const connectToDatabasePARMS = async () => {
+  if (!PARMS_DB_URI) {
+    throw new Error(
+      `Please define the PARMS_DB_URI environment variable inside .env.${NODE_ENV}.local`
+    );
   }
-};
 
-/**
- * MongoDB Connection Event Handlers
- */
-
-// Connection successful
-mongoose.connection.on('connected', () => {
-  console.log('Mongoose connected to MongoDB');
-});
-
-// Connection error
-mongoose.connection.on('error', (err) => {
-  console.error('❌ Mongoose connection error:', err);
-});
-
-// Connection disconnected
-mongoose.connection.on('disconnected', () => {
-  console.log('📴 Mongoose disconnected from MongoDB');
-});
-
-// Reconnected
-mongoose.connection.on('reconnected', () => {
-  console.log('Mongoose reconnected to MongoDB');
-});
-
-// Connection lost
-mongoose.connection.on('close', () => {
-  console.log('Mongoose connection closed');
-});
-
-/**
- * Graceful Disconnect
- * Close database connection on application termination
- */
-export const disconnectDatabase = async () => {
-  try {
-    await mongoose.connection.close();
-    console.log('Database connection closed gracefully');
-  } catch (error) {
-    console.error('Error closing database connection:', error);
+  if (!parmsConnection) {
+    parmsConnection = mongoose.createConnection(
+      PARMS_DB_URI,
+      connectionOptions
+    );
+    await parmsConnection.asPromise();
+    
+    parmsConnection.on("connected", () => {
+      console.log("✓ Connected to PARMS Database (Read/Write)");
+    });
+    
+    parmsConnection.on("error", (err) => {
+      console.error("✗ PARMS DB connection error", err);
+    });
   }
+
+  return parmsConnection;
 };
 
-// Handle application termination
-process.on('SIGINT', async () => {
-  await disconnectDatabase();
+/**
+ * Connect to IBMS Database (Read-Only Access)
+ * Inventory and Billing Management System
+ * Use this to integrate billing and inventory data into patient views
+ */
+export const connectToDatabaseIBMS = async () => {
+  if (!IBMS_DB_URI) {
+    throw new Error(
+      `Please define the IBMS_DB_URI environment variable inside .env.${NODE_ENV}.local`
+    );
+  }
+
+  if (!ibmsConnection) {
+    ibmsConnection = mongoose.createConnection(
+      IBMS_DB_URI,
+      connectionOptions
+    );
+    await ibmsConnection.asPromise();
+    
+    ibmsConnection.on("connected", () => {
+      console.log("✓ Connected to IBMS Database (Read-Only)");
+    });
+    
+    ibmsConnection.on("error", (err) => {
+      console.error("✗ IBMS DB connection error", err);
+    });
+  }
+
+  return ibmsConnection;
+};
+
+/**
+ * Connect to HRMS Database (Read-Only Access)
+ * Human Resource Management System
+ * Use this to integrate staff and personnel data for appointments and records
+ */
+export const connectToDatabaseHRMS = async () => {
+  if (!HRMS_DB_URI) {
+    throw new Error(
+      `Please define the HRMS_DB_URI environment variable inside .env.${NODE_ENV}.local`
+    );
+  }
+
+  if (!hrmsConnection) {
+    hrmsConnection = mongoose.createConnection(
+      HRMS_DB_URI,
+      connectionOptions
+    );
+    await hrmsConnection.asPromise();
+    
+    hrmsConnection.on("connected", () => {
+      console.log("✓ Connected to HRMS Database (Read-Only)");
+    });
+    
+    hrmsConnection.on("error", (err) => {
+      console.error("✗ HRMS DB connection error", err);
+    });
+  }
+
+  return hrmsConnection;
+};
+
+/**
+ * Initialize all database connections
+ * Call this on app startup to establish all connections
+ */
+export const connectAllDatabases = async () => {
+  console.log("Initializing database connections...");
+  
+  await connectToDatabasePARMS();
+  await connectToDatabaseIBMS();
+  await connectToDatabaseHRMS();
+  
+  console.log("✓ All database connections established");
+};
+
+/**
+ * Get your own database connection (Full Access)
+ * Use this for all patient and appointment data operations
+ */
+export const getOwnDatabase = () => {
+  if (!parmsConnection) {
+    throw new Error("PARMS database not initialized. Call connectToDatabasePARMS() first.");
+  }
+  return parmsConnection;
+};
+
+/**
+ * Get read-only database connections for data integration
+ * Use these to fetch billing, inventory, and staff data
+ */
+export const getReadOnlyDatabases = () => {
+  return {
+    ibms: ibmsConnection,
+    hrms: hrmsConnection,
+  };
+};
+
+/**
+ * Close all database connections
+ */
+export const closeAllDatabases = async () => {
+  const connections = [
+    parmsConnection,
+    ibmsConnection,
+    hrmsConnection,
+  ];
+
+  await Promise.all(
+    connections.map((conn) => conn?.close())
+  );
+
+  console.log("✓ All database connections closed");
+};
+
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  await closeAllDatabases();
   process.exit(0);
 });
-
-export default connectToDatabase;

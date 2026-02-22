@@ -15,6 +15,7 @@
  */
 
 import mongoose from 'mongoose';
+import { connectToDatabasePARMS } from '../database/mongodb.js';
 
 /**
  * Availability Schedule Subdocument Schema
@@ -509,7 +510,17 @@ doctorSchema.set('toJSON', {
 
 /**
  * Create and export Doctor model
+ * Uses PARMS database connection
  */
-const Doctor = mongoose.model('Doctor', doctorSchema);
+let Doctor;
 
+export async function getDoctorModel() {
+  if (!Doctor) {
+    const connection = await connectToDatabasePARMS();
+    Doctor = connection.model('Doctor', doctorSchema);
+  }
+  return Doctor;
+}
+
+// Export initialized model (will be undefined until database connects)
 export default Doctor;

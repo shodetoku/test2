@@ -21,6 +21,7 @@
 
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { connectToDatabasePARMS } from '../database/mongodb.js';
 
 /**
  * User Schema Definition
@@ -369,7 +370,17 @@ userSchema.set('toJSON', {
 
 /**
  * Create and export User model
+ * Uses PARMS database connection
  */
-const User = mongoose.model('User', userSchema);
+let User;
 
+export async function getUserModel() {
+  if (!User) {
+    const connection = await connectToDatabasePARMS();
+    User = connection.model('User', userSchema);
+  }
+  return User;
+}
+
+// Export initialized model (will be undefined until database connects)
 export default User;
